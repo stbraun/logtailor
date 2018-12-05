@@ -5,7 +5,7 @@ Copyright 2018, Stefan Braun.
 
 from setuptools import setup
 
-VERSION = '0.4.7'
+VERSION = '0.4.8'
 
 setup(
     name='logtail',
