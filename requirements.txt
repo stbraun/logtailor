@@ -1,0 +1,4 @@
+bumpversion>=0.5.3
+Click>=7.0
+pex>=1.5.3
+Rx>=1.6.1
