@@ -1,18 +1,16 @@
-build: requ
+build: requ clean logtail.py
 	mkdir dist
 	pex -o dist/logtail.pex . -e logtail:tail --validate-entry-point
 
 deploy: build
 	cp logtail.pex /target/destination.pex
 
-venv: clean
-	/usr/local/Cellar/python3/3.7.1/bin/python3.7 -m venv venv
-
-activate: venv
-	source venv/bin/activate
-
-requ: activate, requirements.txt
+requ: requirements.txt
 	pip install -r requirements.txt
+
+.PHONY: venv
+venv:
+	/usr/local/Cellar/python3/3.7.1/bin/python3.7 -m venv venv
 
 .PHONY: clean
 clean:
