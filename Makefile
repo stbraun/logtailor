@@ -1,11 +1,12 @@
-build: requ clean logtail.py
+build: clean requ
 	mkdir dist
 	pex -o dist/logtail.pex . -e logtail:tail --validate-entry-point
 
 deploy: build
 	cp logtail.pex /target/destination.pex
 
-requ: requirements.txt
+.PHONY: requ
+requ:
 	pip install -r requirements.txt
 
 .PHONY: venv
