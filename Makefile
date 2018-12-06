@@ -5,6 +5,12 @@ build: clean requ
 deploy: build
 	cp logtail.pex /target/destination.pex
 
+check: logtail.py reports
+	pylint --rcfile=resrc/pylintrc $(PYLINT_EXTRA) logtail.py | tee reports/pylint.txt
+
+reports:
+	mkdir reports
+
 .PHONY: requ
 requ:
 	pip install -r requirements.txt
@@ -15,6 +21,8 @@ venv:
 
 .PHONY: clean
 clean:
-	rm -rf *.egg-info build dist $${PEX_ROOT}/build/logtail-*.whl
-	rm -rf dist/
+	rm -rf *.egg-info build dist
+	rm -f $${PEX_ROOT}/build/logtail-*.whl
 	rm -f target.txt
+	rm -rf reports
+	rm -rf __pycache__
