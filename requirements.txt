@@ -1,5 +1,6 @@
-bumpversion>=0.5.3
 Click>=7.0
+py
 pex>=1.5.3
+bumpversion>=0.5.3
 pylint
 pylint_pmd
