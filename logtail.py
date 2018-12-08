@@ -7,9 +7,9 @@ Copyright 2018 Stefan Braun.
 
 import sys
 import time
+from configparser import MissingSectionHeaderError
 from pathlib import Path
 from typing import List, Dict
-from configparser import MissingSectionHeaderError
 
 import click
 from confloader import ConfDict
@@ -34,17 +34,21 @@ class Configuration:
         :type path: str
         """
         try:
-            cfg = ConfDict.from_file(path, defaults={'triggers': [], 'output': DEFAULT_TRACE})
+            cfg = ConfDict.from_file(path, defaults={'triggers': [],
+                                                     'output': DEFAULT_TRACE})
             ofs = len('logfiles.')
-            self.logs = {k[ofs:].strip() : v for k, v in cfg.items() if k.startswith('logfiles.')}
-            print(self.logs)
+            self.logs = {k[ofs:].strip(): v for k, v in cfg.items() if
+                         k.startswith('logfiles.')}
             self.output = Path(cfg['output'])
             self.triggers = cfg['triggers']
         except MissingSectionHeaderError as msh:
-            print(msh)
+            sys.stderr.write(str(msh) + '\n')
             sys.exit(1)
         except ConfDict.ConfigurationError as cex:
-            print('Configuration error. Falling back to default configuration. ({})'.format(cex))
+            sys.stderr.write(
+                'Configuration error. Falling back to default configuration. '
+                '({})\n'.format(
+                    cex))
             self.logs = {}
             self.triggers = []
             self.output = Path(DEFAULT_TRACE)
@@ -74,14 +78,16 @@ def validate_log(parse_all: bool, log: str, logs: Dict[str, str]):
     :type log: str
     :param logs: a map of references to configured log files for convenience.
     :type logs: Dict[str:str]
+    :return: one or more logfiles to parse.
+    :rtype:  List[Path]
     """
     if parse_all:
-        return (Path(log) for log in logs.values())
+        return [Path(log) for log in logs.values()]
     if log in logs:
-        return (Path(logs[log]),)
+        return [Path(logs[log])]
     path = Path(log)
     if path.exists():
-        return (path,)
+        return [path]
     sys.stderr.write(
         'Logfile {} does not exist and is not a known log key. Please '
         'use one of: {}\n'.format(log, ', '.join(logs.keys())))
