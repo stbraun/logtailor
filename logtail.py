@@ -8,12 +8,14 @@ Copyright 2018 Stefan Braun.
 import sys
 import time
 from pathlib import Path
-from typing import Union, List, Dict
+from typing import List, Dict
+from configparser import MissingSectionHeaderError
 
 import click
-from py.iniconfig import IniConfig
+from confloader import ConfDict
 
 # Configuration
+INI_FILE = '.logtail.ini'
 INI_LOGFILES = 'logfiles'
 INI_GENERAL = 'general'
 INI_OUTPUT = 'output'
@@ -25,22 +27,25 @@ DEFAULT_TRACE = './trace.txt'
 class Configuration:
     """Manages configuration file access to items."""
 
-    def __init__(self, path: Path = Path('.logtail.ini')):
+    def __init__(self, path: str):
         """Initializes the configuration.
 
         :param path: path to configuration file.
-        :type path: Path.
+        :type path: str
         """
-        self.logs = {}
-        if path.exists():
-            cfg = IniConfig(path)
-            if INI_LOGFILES in cfg.sections:
-                self.logs = cfg.sections[INI_LOGFILES]
-            self.output = Path(
-                cfg.get(INI_GENERAL, INI_OUTPUT, default=DEFAULT_TRACE))
-            self.triggers = cfg.get(INI_GENERAL, INI_TRIGGERS,
-                                    default='').split('\n')
-        else:
+        try:
+            cfg = ConfDict.from_file(path, defaults={'triggers': [], 'output': DEFAULT_TRACE})
+            ofs = len('logfiles.')
+            self.logs = {k[ofs:].strip() : v for k, v in cfg.items() if k.startswith('logfiles.')}
+            print(self.logs)
+            self.output = Path(cfg['output'])
+            self.triggers = cfg['triggers']
+        except MissingSectionHeaderError as msh:
+            print(msh)
+            sys.exit(1)
+        except ConfDict.ConfigurationError as cex:
+            print('Configuration error. Falling back to default configuration. ({})'.format(cex))
+            self.logs = {}
             self.triggers = []
             self.output = Path(DEFAULT_TRACE)
 
@@ -60,34 +65,31 @@ def out(f_out, line: str):
     sys.stdout.write(ln_out)
 
 
-def validate_log(parse_all: bool, log: Union[str, Path], logs: Dict[str,str]):
+def validate_log(parse_all: bool, log: str, logs: Dict[str, str]):
     """Validate given log.
 
     :param parse_all: parse all configured log files.
     :type parse_all: boolean
     :param log: path or reference to a logfile to parse.
-    :type log: Union[str, Path]
+    :type log: str
     :param logs: a map of references to configured log files for convenience.
     :type logs: Dict[str:str]
     """
     if parse_all:
-        return logs.values()
-    try:
-        if isinstance(log, Path) and log.exists():
-            logfile = log
-        else:
-            logfile = logs[log]
-        return (logfile,)
-    except KeyError:
-        sys.stderr.write(
-            'Logfile {} does not exist and is not a known log key. Please '
-            'use one of: {}\n'.format(
-                log, ', '.join(logs.keys())))
-        sys.exit(1)
+        return (Path(log) for log in logs.values())
+    if log in logs:
+        return (Path(logs[log]),)
+    path = Path(log)
+    if path.exists():
+        return (path,)
+    sys.stderr.write(
+        'Logfile {} does not exist and is not a known log key. Please '
+        'use one of: {}\n'.format(log, ', '.join(logs.keys())))
+    sys.exit(1)
 
 
 @click.command()
-@click.option('--log', type=Path,
+@click.option('--log', type=str,
               help='Logfile to stream. Path to a file or a key to a logfile '
                    'in the configuration.')
 @click.option('--history/--no-history', default=False,
@@ -104,7 +106,7 @@ def validate_log(parse_all: bool, log: Union[str, Path], logs: Dict[str,str]):
               help='Parse all logs in sequence and append the result.')
 @click.option('--append/--no-append', '-a', default=False,
               help='Append to Target file.')
-def tail(history: bool, filter_: bool, trigger: str, log: Union[Path, str],
+def tail(history: bool, filter_: bool, trigger: str, log: str,
          verbose: bool, parse_all: bool, append: bool):
     """Tail log file and filter for tags.
 
@@ -112,7 +114,7 @@ def tail(history: bool, filter_: bool, trigger: str, log: Union[Path, str],
 
     :param log: reference to a logfile. Path to a file or a key to a logfile
     in the configuration.
-    :type log: Union[Path, str]
+    :type log: str
     :param history: show history. If False show only lines created after start
     of program,
     :type history: bool
@@ -127,12 +129,12 @@ def tail(history: bool, filter_: bool, trigger: str, log: Union[Path, str],
     :param append: append to existing target file.
     :type append: bool
     """
-    cfg = Configuration()
-    logs = validate_log(parse_all, log, cfg.logs)
+    cfg = Configuration(INI_FILE)
+    log_files = validate_log(parse_all, log, cfg.logs)
     cfg.triggers.extend(trigger)
     mode = 'a' if append else 'w'
     with open(cfg.output, mode, buffering=1) as f_out:
-        for log_ in logs:
+        for log_ in log_files:
             if not log_.exists():
                 continue
             with log_.open("r") as f_in:

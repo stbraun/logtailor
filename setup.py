@@ -26,7 +26,7 @@ setup(
     author_email="sb@action.ms",
     license="MIT",
     py_modules=['logtail'],
-    install_requires=['click', 'py', 'pex', 'bumpversion'],
+    install_requires=['click', 'confloader', 'pex', 'bumpversion'],
     entry_points={
         'console_scripts': [
             'logtail=logtail:tail',
