@@ -4,3 +4,5 @@ pex>=1.5.3
 bumpversion>=0.5.3
 pylint
 pylint_pmd
+pytest
+pytest-watch
