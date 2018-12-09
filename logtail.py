@@ -30,7 +30,7 @@ import click
 from confloader import ConfDict
 
 # Version number. Managed by bumpversion, do not edit!
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 
 # Configuration
 INI_FILE = '.logtail.ini'
