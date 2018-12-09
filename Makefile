@@ -1,7 +1,7 @@
 
 REPORTS_DIR = reports
 TEST_REPORT = $(REPORTS_DIR)/unittests.xml
-PYLINT_REPORT = $(REPORTS_DIR)/pylint.txt
+PYLINT_REPORT = $(REPORTS_DIR)/pylint.xml
 
 
 build: clean requ check test
