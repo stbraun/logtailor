@@ -29,6 +29,9 @@ from typing import List, Dict
 import click
 from confloader import ConfDict
 
+# Version number. Managed by bumpversion, do not edit!
+VERSION = '0.5.2'
+
 # Configuration
 INI_FILE = '.logtail.ini'
 INI_LOGFILES = 'logfiles'
@@ -133,8 +136,9 @@ def validate_log(parse_all: bool, log: str, logs: Dict[str, str]):
               help='Parse all logs in sequence and append the result.')
 @click.option('--append/--no-append', '-a', default=False,
               help='Append to Target file.')
+@click.option('--version', 'show_version', is_flag=True, help='Show version information and exit..')
 def tail(history: bool, filter_: bool, trigger: str, log: str,
-         verbose: bool, parse_all: bool, append: bool):
+         verbose: bool, parse_all: bool, append: bool, show_version: bool):
     """Tail log file and filter for tags.
 
     Print only lines matching patterns given in triggers.
@@ -155,7 +159,12 @@ def tail(history: bool, filter_: bool, trigger: str, log: str,
     :type parse_all: bool
     :param append: append to existing target file.
     :type append: bool
+    :param version: show version information and exit.
+    :type version: bool
     """
+    if show_version:
+        sys.stdout.write('logtail version {}. Copyright 2018 Stefan Braun.\n'.format(VERSION))
+        sys.exit(0)
     cfg = Configuration(INI_FILE)
     log_files = validate_log(parse_all, log, cfg.logs)
     cfg.triggers.extend(trigger)
