@@ -107,6 +107,11 @@ def validate_log(parse_all: bool, log: str, logs: Dict[str, str]):
     """
     if parse_all:
         return [Path(log) for log in logs.values()]
+    if log is None:
+        sys.stderr.write(
+            'Please specify at least a log file. Try --help for additional '
+            'information.\n|n')
+        sys.exit(1)
     if log in logs:
         return [Path(logs[log])]
     path = Path(log)
@@ -114,7 +119,7 @@ def validate_log(parse_all: bool, log: str, logs: Dict[str, str]):
         return [path]
     sys.stderr.write(
         'Logfile {} does not exist and is not a known log key. Please '
-        'use one of: {}\n'.format(log, ', '.join(logs.keys())))
+        'use one of: {}\n\n'.format(log, ', '.join(logs.keys())))
     sys.exit(1)
 
 
