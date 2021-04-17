@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+click = "*"
+confloader = "*"
+loguru = "*"
+pex = "*"
+
+[dev-packages]
+bumpversion = "*"
+pylint = "*"
+pylint-pmd = "*"
+pytest = "*"
+pytest-watch = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+sphinx = "*"
+
+[requires]
+python_version = "3.8"

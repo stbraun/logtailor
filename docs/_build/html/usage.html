@@ -1,0 +1,154 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Usage &#8212; logtailor 1.2.1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="logtailor" href="modules.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p><cite>logtailor</cite> is a tail program and filter for log files. You can apply it to a copy of a logfile to filter for specific information, or on a log file of a running application to filter the log output in real time.</p>
+<p>After installing <cite>logtailor</cite> it is available as an executable. To get an overview just call::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">logtailor</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>This will provide a list of all command line arguments with a short description.</p>
+<div class="section" id="parsing-a-log-file-for-some-pattern">
+<h2>Parsing a log file for some pattern<a class="headerlink" href="#parsing-a-log-file-for-some-pattern" title="Permalink to this headline">¶</a></h2>
+<p>We have a copy of a log file and want to check for certain patterns, e.g., ERROR and WARN logs::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">logtailor</span> <span class="o">--</span><span class="n">log</span> <span class="n">file</span><span class="o">.</span><span class="n">log</span> <span class="o">--</span><span class="n">trigger</span><span class="o">=</span><span class="n">ERROR</span> <span class="o">--</span><span class="n">trigger</span><span class="o">=</span><span class="n">WARN</span> <span class="o">--</span><span class="n">history</span>
+</pre></div>
+</div>
+<p><cite>–trigger</cite> is used to specify patterns to look for. We need to add <cite>–history</cite> to tell <cite>logtailor</cite> that also already existing log entries shall be considered.</p>
+</div>
+<div class="section" id="using-s-configuration-file">
+<h2>Using s configuration file<a class="headerlink" href="#using-s-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>When working with the same logs and filters for some time, it gets tedious to enter the same command line arguments over and over again. In this case it is more convenient to use a configuration file. Create a file named <cite>.logtailor.ini</cite> in the folder you run the program. In the configuration file you can configure a list of log files you want to use. Assign a name to each log file to reference it later on::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">logfiles</span><span class="p">]</span>
+<span class="n">log1</span> <span class="o">=</span> <span class="o">./</span><span class="n">logs</span><span class="o">/</span><span class="n">application</span><span class="o">/</span><span class="n">server</span><span class="o">.</span><span class="n">log</span>
+<span class="n">log2</span> <span class="o">=</span> <span class="o">./</span><span class="n">logs</span><span class="o">/</span><span class="n">webserver</span><span class="o">/</span><span class="n">site</span><span class="o">.</span><span class="n">log</span>
+</pre></div>
+</div>
+<p>In a second section the output file and triggers can be configured::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="k">global</span><span class="p">]</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">filtered</span><span class="o">.</span><span class="n">log</span>
+
+<span class="n">triggers</span> <span class="o">=</span>
+    <span class="n">ERROR</span>
+    <span class="n">interesting</span> <span class="n">message</span>
+    <span class="n">server</span> <span class="n">started</span>
+</pre></div>
+</div>
+<p>With such a configuration you can use the short log names instead of the paths to specify a logfile. All triggers in the configuration will be used automatically. More triggers can be added on the command line::</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">logtailor</span> <span class="o">--</span><span class="n">log</span> <span class="n">log2</span> <span class="o">--</span><span class="n">trigger</span><span class="o">=</span><span class="n">WARNING</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">logtailor</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">logtailor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#parsing-a-log-file-for-some-pattern">Parsing a log file for some pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-s-configuration-file">Using s configuration file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">logtailor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="modules.html" title="next chapter">logtailor</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Stefan Braun.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/usage.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,524 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>logtailor.logtailor &#8212; logtailor 1.2.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for logtailor.logtailor</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="sd">&quot;&quot;&quot;Logfile analysis tool.&quot;&quot;&quot;</span>
+<span class="c1"># Copyright (c) 2018 Stefan Braun</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining</span>
+<span class="c1"># a copy of this software and associated documentation files (the &quot;Software&quot;),</span>
+<span class="c1"># to deal in the Software without restriction, including without limitation</span>
+<span class="c1"># the rights to use, copy, modify, merge, publish, distribute, sublicense,</span>
+<span class="c1"># and/or sell copies of the Software, and to permit persons to whom the</span>
+<span class="c1"># Software is furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included</span>
+<span class="c1"># in all copies or substantial portions of the Software.</span>
+<span class="c1">#</span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS</span>
+<span class="c1"># OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL</span>
+<span class="c1"># THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR</span>
+<span class="c1"># OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,</span>
+<span class="c1"># ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR</span>
+<span class="c1"># OTHER DEALINGS IN THE SOFTWARE.</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">MissingSectionHeaderError</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">concurrent.futures</span>
+<span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Event</span>
+
+<span class="kn">from</span> <span class="nn">loguru</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">import</span> <span class="nn">click</span>
+<span class="kn">from</span> <span class="nn">confloader</span> <span class="kn">import</span> <span class="n">ConfDict</span>
+
+<span class="kn">from</span> <span class="nn">.processors</span> <span class="kn">import</span> <span class="n">SerialProcessor</span><span class="p">,</span> <span class="n">ParallelProcessor</span>
+
+
+<span class="c1"># Version number. Managed by bumpversion, do not edit!</span>
+<span class="n">VERSION</span> <span class="o">=</span> <span class="s2">&quot;1.2.1&quot;</span>
+
+<span class="c1"># Configuration</span>
+<span class="n">INI_FILE</span> <span class="o">=</span> <span class="s2">&quot;.logtailor.ini&quot;</span>
+<span class="n">INI_LOGFILES</span> <span class="o">=</span> <span class="s2">&quot;logfiles&quot;</span>
+<span class="n">INI_GENERAL</span> <span class="o">=</span> <span class="s2">&quot;general&quot;</span>
+<span class="n">INI_OUTPUT</span> <span class="o">=</span> <span class="s2">&quot;output&quot;</span>
+<span class="n">INI_TRIGGERS</span> <span class="o">=</span> <span class="s2">&quot;triggers&quot;</span>
+
+<span class="n">DEFAULT_TRACE</span> <span class="o">=</span> <span class="s2">&quot;./trace.txt&quot;</span>
+
+<span class="n">MAX_QUEUE_SIZE</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="n">TIMEOUT</span> <span class="o">=</span> <span class="mi">30</span>  <span class="c1"># timeout for thread completion.</span>
+
+
+<span class="n">L_TIME</span> <span class="o">=</span> <span class="s2">&quot;{time:YYYY.MM.DD HH:mm:ss.SSSSS}&quot;</span>
+<span class="n">L_FORMAT</span> <span class="o">=</span> <span class="n">L_TIME</span> <span class="o">+</span> <span class="s2">&quot; - </span><span class="si">{level:8s}</span><span class="s2"> - </span><span class="si">{file}{function}</span><span class="s2">:</span><span class="si">{line}</span><span class="s2"> - </span><span class="si">{message}</span><span class="s2">&quot;</span>
+
+<span class="n">L_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;handlers&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;sink&quot;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{time}</span><span class="s2"> - </span><span class="si">{message}</span><span class="s2">&quot;</span><span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;sink&quot;</span><span class="p">:</span> <span class="s2">&quot;logtailor.log&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="n">L_FORMAT</span><span class="p">,</span>
+            <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="s2">&quot;logtailor&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;level&quot;</span><span class="p">:</span> <span class="s2">&quot;TRACE&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="o">**</span><span class="n">L_CONFIG</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="s2">&quot;logtailor&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Configuration"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.Configuration">[docs]</a><span class="k">class</span> <span class="nc">Configuration</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Manages configuration file access to items.</span>
+
+<span class="sd">    Provides:</span>
+<span class="sd">    logs: Dict[str, str] - mapping of keys to logfiles.</span>
+<span class="sd">    triggers: List[str] - list of triggers.</span>
+<span class="sd">    output: Path - trace file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the configuration.</span>
+
+<span class="sd">        :param path: path to configuration file.</span>
+<span class="sd">        :type path: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cfg</span> <span class="o">=</span> <span class="n">ConfDict</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span>
+                <span class="n">path</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;triggers&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;output&quot;</span><span class="p">:</span> <span class="n">DEFAULT_TRACE</span><span class="p">}</span>
+            <span class="p">)</span>
+            <span class="n">ofs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="s2">&quot;logfiles.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logs_</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">k</span><span class="p">[</span><span class="n">ofs</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span> <span class="n">Path</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cfg</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;logfiles.&quot;</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">triggers_</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;triggers&quot;</span><span class="p">]</span>
+        <span class="k">except</span> <span class="n">MissingSectionHeaderError</span> <span class="k">as</span> <span class="n">msh</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">msh</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ConfDict</span><span class="o">.</span><span class="n">ConfigurationError</span> <span class="k">as</span> <span class="n">cex</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="s2">&quot;Configuration error. Falling back to default configuration. &quot;</span>
+                <span class="s2">&quot;(</span><span class="si">{}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cex</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logs_</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">triggers_</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">DEFAULT_TRACE</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">logs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configured logfiles with their keys.</span>
+
+<span class="sd">        :return: dictionary of key: logfile pairs.</span>
+<span class="sd">        :rtype: Dict[str, Path]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">logs_</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configured path to output file.</span>
+
+<span class="sd">        :return: path to output file.</span>
+<span class="sd">        :rtype: Path</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">triggers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Configured triggers.</span>
+
+<span class="sd">        :return: list of triggers.</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">triggers_</span></div>
+
+
+<div class="viewcode-block" id="render_log"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.render_log">[docs]</a><span class="nd">@logger</span><span class="o">.</span><span class="n">catch</span>
+<span class="k">def</span> <span class="nf">render_log</span><span class="p">(</span><span class="n">log_queue</span><span class="p">:</span> <span class="n">Queue</span><span class="p">,</span> <span class="n">f_out</span><span class="p">,</span> <span class="n">cancel</span><span class="p">:</span> <span class="n">Event</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Render lines read from queue.&quot;&quot;&quot;</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;render_log() started&quot;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cancel</span><span class="o">.</span><span class="n">is_set</span><span class="p">()</span> <span class="ow">and</span> <span class="n">log_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;render_log() --&gt;  canceled&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">log_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">log_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">out</span><span class="p">(</span><span class="n">f_out</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="n">log_queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="out"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.out">[docs]</a><span class="k">def</span> <span class="nf">out</span><span class="p">(</span><span class="n">f_out</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write line to output.&quot;&quot;&quot;</span>
+    <span class="n">ln_out</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\r</span><span class="s2">&quot;</span>
+    <span class="n">f_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ln_out</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">ln_out</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="validate_log"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.validate_log">[docs]</a><span class="nd">@logger</span><span class="o">.</span><span class="n">catch</span>
+<span class="k">def</span> <span class="nf">validate_log</span><span class="p">(</span><span class="n">parse_all</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Validate given log.</span>
+
+<span class="sd">    :param parse_all: parse all configured log files.</span>
+<span class="sd">    :type parse_all: boolean</span>
+<span class="sd">    :param log: path or reference to a logfile to parse.</span>
+<span class="sd">    :type log: str</span>
+<span class="sd">    :param logs: a map of references to configured log files for convenience.</span>
+<span class="sd">    :type logs: Dict[str, Path]</span>
+<span class="sd">    :return: one or more logfiles to parse.</span>
+<span class="sd">    :rtype:  List[Path]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">parse_all</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">logs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">log</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s2">&quot;Please specify at least a log file. Try --help for additional &quot;</span>
+            <span class="s2">&quot;information.</span><span class="se">\n</span><span class="s2">|n&quot;</span>
+        <span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">logs</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">logs</span><span class="p">[</span><span class="n">log</span><span class="p">])]</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">path</span><span class="p">]</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="s2">&quot;Logfile </span><span class="si">{}</span><span class="s2"> does not exist and is not a known log key. Please &quot;</span>
+        <span class="s2">&quot;use one of: </span><span class="si">{}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logs</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+    <span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mode"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.mode">[docs]</a><span class="k">def</span> <span class="nf">mode</span><span class="p">(</span><span class="n">is_append</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write mode dependend on is_append.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;a&quot;</span> <span class="k">if</span> <span class="n">is_append</span> <span class="k">else</span> <span class="s2">&quot;w&quot;</span></div>
+
+
+<div class="viewcode-block" id="processor_factory"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.processor_factory">[docs]</a><span class="k">def</span> <span class="nf">processor_factory</span><span class="p">(</span>
+    <span class="n">log_files</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+    <span class="n">triggers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">log_queue</span><span class="p">:</span> <span class="n">Queue</span><span class="p">,</span>
+    <span class="n">cancel_event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span>
+    <span class="n">tailing</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">history</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a processor instance.</span>
+
+<span class="sd">    :param log_files: list of logfiles to parse.</span>
+<span class="sd">    :type log_files: List[Path]</span>
+<span class="sd">    :param triggers: search the logfiles for these triggers.</span>
+<span class="sd">    :type triggers: List[str]</span>
+<span class="sd">    :param log_queue: deliver filtered lines in this queue.</span>
+<span class="sd">    :type log_queue: Queue</span>
+<span class="sd">    :param cancel_event: trigger to cancel logile processing.</span>
+<span class="sd">    :type cancel_event: Event</span>
+<span class="sd">    :param tailing: wait for more data at eol.</span>
+<span class="sd">    :type tailing: bool</span>
+<span class="sd">    :param history: parse log file entries recorded before start of the tool.</span>
+<span class="sd">    :type history: bool</span>
+<span class="sd">    :param encoding: encoding of the log file.</span>
+<span class="sd">    :type encoding: str</span>
+<span class="sd">    :return: a log processor instance.</span>
+<span class="sd">    :rtype: LogProcessor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tailing</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ParallelProcessor</span><span class="p">(</span><span class="n">log_files</span><span class="p">,</span> <span class="n">triggers</span><span class="p">,</span> <span class="n">log_queue</span><span class="p">,</span>
+                                 <span class="n">cancel_event</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">encoding</span><span class="p">,</span> <span class="n">tailing</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SerialProcessor</span><span class="p">(</span><span class="n">log_files</span><span class="p">,</span> <span class="n">triggers</span><span class="p">,</span> <span class="n">log_queue</span><span class="p">,</span>
+                           <span class="n">cancel_event</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">encoding</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="determine_triggers"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.determine_triggers">[docs]</a><span class="k">def</span> <span class="nf">determine_triggers</span><span class="p">(</span><span class="n">triggers</span><span class="p">,</span> <span class="n">add_triggers</span><span class="p">,</span> <span class="n">use_triggers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Determine set of effective triggers.</span>
+
+<span class="sd">    :param triggers: list of configured triggers.</span>
+<span class="sd">    :type triggers: List[str]</span>
+<span class="sd">    :param add_triggers: additional triggers.</span>
+<span class="sd">    :type add_triggers: List[str]</span>
+<span class="sd">    :param use_triggers: triggers shall be applied.</span>
+<span class="sd">    :type use_triggers: bool</span>
+<span class="sd">    :return: list of effective triggers.</span>
+<span class="sd">    :rtype: List[str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">use_triggers</span><span class="p">:</span>
+        <span class="n">triggers_</span> <span class="o">=</span> <span class="n">triggers</span>
+        <span class="n">triggers_</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">add_triggers</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">triggers_</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="n">triggers_</span></div>
+
+
+<div class="viewcode-block" id="verbose_info"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.verbose_info">[docs]</a><span class="k">def</span> <span class="nf">verbose_info</span><span class="p">(</span><span class="n">log_files</span><span class="p">,</span> <span class="n">triggers</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Print verbose information to stderr.</span>
+
+<span class="sd">    :param log_files: list of log files.</span>
+<span class="sd">    :type log_files: List[Path]</span>
+<span class="sd">    :param triggers: list of triggers.</span>
+<span class="sd">    :type triggers: List[str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">logtailor version </span><span class="si">{}</span><span class="s2">. Copyright 2018 Stefan Braun.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">VERSION</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Triggers:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">trigger</span> <span class="ow">in</span> <span class="n">triggers</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trigger</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Log files:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">log</span> <span class="ow">in</span> <span class="n">log_files</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">log</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="print_version_and_exit"><a class="viewcode-back" href="../../logtailor.html#logtailor.logtailor.print_version_and_exit">[docs]</a><span class="k">def</span> <span class="nf">print_version_and_exit</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Print version and copyright info to stderr and exit with 0.&quot;&quot;&quot;</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="s2">&quot;logtailor version </span><span class="si">{}</span><span class="s2">. Copyright 2018 Stefan Braun.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">VERSION</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<span class="c1"># pylint: disable=too-many-locals</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">command</span><span class="p">()</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--log&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Logfile to stream. Path to a file or a key to a logfile &quot;</span>
+    <span class="s2">&quot;in the configuration.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--tail/--no-tail&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Tail logfile waiting for more data. Do not exit at eof.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--history/--no-history&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Start with a clean output. Existing logs will not be printed.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--filter/--no-filter&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-f/-nf&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;filter_&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Disable filtering. Print all logs.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--trigger&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-t&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">multiple</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Add a new trigger. May be used multiple times.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--verbose/--no-verbose&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-v/-nv&quot;</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Output is more verbose. For example name of logfile and &quot;</span>
+    <span class="s2">&quot;active tags are printed.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--parse-all&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-p&quot;</span><span class="p">,</span>
+    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Parse all logs in sequence and append the result.&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--append/--no-append&quot;</span><span class="p">,</span> <span class="s2">&quot;-a&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Append to Target file.&quot;</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--version&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;show_version&quot;</span><span class="p">,</span>
+    <span class="n">is_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show version information and exit..&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@click</span><span class="o">.</span><span class="n">option</span><span class="p">(</span>
+    <span class="s2">&quot;--encoding&quot;</span><span class="p">,</span>
+    <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+    <span class="n">default</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Encoding of the log files, e.g., latin1. Default is utf-8.&quot;</span>
+<span class="p">)</span>
+<span class="nd">@logger</span><span class="o">.</span><span class="n">catch</span>
+<span class="k">def</span> <span class="nf">tailor</span><span class="p">(</span>
+    <span class="n">history</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">filter_</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">trigger</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">log</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">tail</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">parse_all</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">append</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">show_version</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">encoding</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tail log file and filter for triggers.</span>
+
+<span class="sd">    Print only lines matching patterns given in triggers.</span>
+
+<span class="sd">    :param log: reference to a logfile. Path to a file or a key to a logfile</span>
+<span class="sd">    in the configuration.</span>
+<span class="sd">    :type log: str</span>
+<span class="sd">    :param tail: Tail logfile waiting for more data. Do not exit at eof.</span>
+<span class="sd">    :type tail: bool</span>
+<span class="sd">    :param history: show history. If False show only lines created after start</span>
+<span class="sd">    of program,</span>
+<span class="sd">    :type history: bool</span>
+<span class="sd">    :param filter_: apply line filter or switch it off.</span>
+<span class="sd">    :type filter_: bool</span>
+<span class="sd">    :param trigger: add a trigger to the filter criteria.</span>
+<span class="sd">    :type trigger: str</span>
+<span class="sd">    :param verbose: more verbose output.</span>
+<span class="sd">    :type verbose: bool</span>
+<span class="sd">    :param parse_all: parse all known log files.</span>
+<span class="sd">    :type parse_all: bool</span>
+<span class="sd">    :param append: append to existing target file.</span>
+<span class="sd">    :type append: bool</span>
+<span class="sd">    :param show_version: show version information and exit.</span>
+<span class="sd">    :type show_version: bool</span>
+<span class="sd">    :param encoding: encoding of the log file(s), e.g., latin1.</span>
+<span class="sd">    :type encoding: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">show_version</span><span class="p">:</span>
+        <span class="n">print_version_and_exit</span><span class="p">()</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">Configuration</span><span class="p">(</span><span class="n">INI_FILE</span><span class="p">)</span>
+    <span class="n">triggers</span> <span class="o">=</span> <span class="n">determine_triggers</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">triggers</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">filter_</span><span class="p">)</span>
+    <span class="n">log_files</span> <span class="o">=</span> <span class="n">validate_log</span><span class="p">(</span><span class="n">parse_all</span><span class="p">,</span> <span class="n">log</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">logs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">verbose_info</span><span class="p">(</span><span class="n">log_files</span><span class="p">,</span> <span class="n">triggers</span><span class="p">)</span>
+    <span class="n">log_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">(</span><span class="n">MAX_QUEUE_SIZE</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">mode</span><span class="p">(</span><span class="n">append</span><span class="p">),</span> <span class="n">buffering</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">f_out</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span> <span class="k">as</span> <span class="n">tp_ex</span><span class="p">:</span>
+            <span class="n">cancel_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+            <span class="n">cancel_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="n">future_render</span> <span class="o">=</span> <span class="n">tp_ex</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">render_log</span><span class="p">,</span> <span class="n">log_queue</span><span class="p">,</span> <span class="n">f_out</span><span class="p">,</span> <span class="n">cancel_event</span><span class="p">)</span>
+            <span class="n">processor</span> <span class="o">=</span> <span class="n">processor_factory</span><span class="p">(</span>
+                <span class="n">log_files</span><span class="p">,</span> <span class="n">triggers</span><span class="p">,</span> <span class="n">log_queue</span><span class="p">,</span> <span class="n">cancel_event</span><span class="p">,</span> <span class="n">tail</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">encoding</span>
+            <span class="p">)</span>
+            <span class="n">future_processor</span> <span class="o">=</span> <span class="n">tp_ex</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">processor</span><span class="o">.</span><span class="n">run</span><span class="p">)</span>
+
+            <span class="n">click</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+            <span class="n">cancel_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">future_processor</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">TIMEOUT</span><span class="p">)</span>
+                <span class="n">future_render</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">TIMEOUT</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">,</span>
+                    <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Timeout waiting for processing threads to complete (</span><span class="si">{}</span><span class="s2">).&quot;</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="s2">&quot;----- stopped -----&quot;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">tailor</span><span class="p">()</span>  <span class="c1"># pylint: disable=no-value-for-parameter</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">logtailor</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">logtailor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">logtailor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../history.html">History</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Stefan Braun.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

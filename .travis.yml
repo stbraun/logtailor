@@ -1,0 +1,30 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+python:
+  - 3.8
+
+before_install:
+    - pip install --upgrade pip
+    - pip install pipenv
+    - pipenv install --dev
+install: skip
+script:
+    - pipenv run make lint
+    - pipenv run python setup.py test
+
+# Assuming you have installed the travis-ci CLI tool, after you
+# create the Github repo and add it to Travis, run the
+# following command to finish PyPI deployment setup:
+# $ travis encrypt --add deploy.password
+deploy:
+  provider: pypi
+  distributions: sdist bdist_wheel
+  user: stbraun
+  password:
+    secure:  
+  on:
+    tags: true
+    repo: stbraun/logtailor
+    branch: main
+    python: 3.8

@@ -1,0 +1,435 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>logtailor package &#8212; logtailor 1.2.1 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="logtailor" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="logtailor-package">
+<h1>logtailor package<a class="headerlink" href="#logtailor-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-logtailor.logtailor">
+<span id="logtailor-logtailor-module"></span><h2>logtailor.logtailor module<a class="headerlink" href="#module-logtailor.logtailor" title="Permalink to this headline">¶</a></h2>
+<p>Logfile analysis tool.</p>
+<dl class="py class">
+<dt id="logtailor.logtailor.Configuration">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">Configuration</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#Configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.Configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages configuration file access to items.</p>
+<p>Provides:
+logs: Dict[str, str] - mapping of keys to logfiles.
+triggers: List[str] - list of triggers.
+output: Path - trace file.</p>
+<dl class="py method">
+<dt id="logtailor.logtailor.Configuration.logs">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">logs</span></code><a class="headerlink" href="#logtailor.logtailor.Configuration.logs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configured logfiles with their keys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dictionary of key: logfile pairs.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Dict[str, Path]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="logtailor.logtailor.Configuration.output">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">output</span></code><a class="headerlink" href="#logtailor.logtailor.Configuration.output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configured path to output file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>path to output file.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Path</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="logtailor.logtailor.Configuration.triggers">
+<em class="property"><span class="pre">property</span> </em><code class="sig-name descname"><span class="pre">triggers</span></code><a class="headerlink" href="#logtailor.logtailor.Configuration.triggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configured triggers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list of triggers.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.determine_triggers">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">determine_triggers</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triggers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_triggers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_triggers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#determine_triggers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.determine_triggers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine set of effective triggers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>triggers</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – list of configured triggers.</p></li>
+<li><p><strong>add_triggers</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – additional triggers.</p></li>
+<li><p><strong>use_triggers</strong> (<em>bool</em>) – triggers shall be applied.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of effective triggers.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.mode">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">mode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_append</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write mode dependend on is_append.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.out">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">out</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#out"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.out" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write line to output.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.print_version_and_exit">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">print_version_and_exit</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#print_version_and_exit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.print_version_and_exit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print version and copyright info to stderr and exit with 0.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.processor_factory">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">processor_factory</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_files</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_queue</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">queue.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel_event</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">threading.Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tailing</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#processor_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.processor_factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a processor instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_files</strong> (<em>List</em><em>[</em><em>Path</em><em>]</em>) – list of logfiles to parse.</p></li>
+<li><p><strong>triggers</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – search the logfiles for these triggers.</p></li>
+<li><p><strong>log_queue</strong> (<em>Queue</em>) – deliver filtered lines in this queue.</p></li>
+<li><p><strong>cancel_event</strong> (<em>Event</em>) – trigger to cancel logile processing.</p></li>
+<li><p><strong>tailing</strong> (<em>bool</em>) – wait for more data at eol.</p></li>
+<li><p><strong>history</strong> (<em>bool</em>) – parse log file entries recorded before start of the tool.</p></li>
+<li><p><strong>encoding</strong> (<em>str</em>) – encoding of the log file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a log processor instance.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#logtailor.processors.LogProcessor" title="logtailor.processors.LogProcessor">LogProcessor</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.render_log">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">render_log</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_queue</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">queue.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">threading.Event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#render_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.render_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render lines read from queue.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.validate_log">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">validate_log</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_all</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#validate_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.validate_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate given log.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parse_all</strong> (<em>boolean</em>) – parse all configured log files.</p></li>
+<li><p><strong>log</strong> (<em>str</em>) – path or reference to a logfile to parse.</p></li>
+<li><p><strong>logs</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Path</em><em>]</em>) – a map of references to configured log files for convenience.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>one or more logfiles to parse.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[Path]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="logtailor.logtailor.verbose_info">
+<code class="sig-prename descclassname"><span class="pre">logtailor.logtailor.</span></code><code class="sig-name descname"><span class="pre">verbose_info</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/logtailor.html#verbose_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.logtailor.verbose_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print verbose information to stderr.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log_files</strong> (<em>List</em><em>[</em><em>Path</em><em>]</em>) – list of log files.</p></li>
+<li><p><strong>triggers</strong> (<em>List</em><em>[</em><em>str</em><em>]</em>) – list of triggers.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-logtailor.processors">
+<span id="logtailor-processors-module"></span><h2>logtailor.processors module<a class="headerlink" href="#module-logtailor.processors" title="Permalink to this headline">¶</a></h2>
+<p>Log processors.</p>
+<dl class="py class">
+<dt id="logtailor.processors.LogProcessor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">logtailor.processors.</span></code><code class="sig-name descname"><span class="pre">LogProcessor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_files</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_queue</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">queue.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">threading.Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tailing</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#LogProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.LogProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Process one or more logs.</p>
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.cancel">
+<code class="sig-name descname"><span class="pre">cancel</span></code><em class="property"><span class="pre">:</span> <span class="pre">threading.Event</span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.filtered">
+<code class="sig-name descname"><span class="pre">filtered</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.log_queue">
+<code class="sig-name descname"><span class="pre">log_queue</span></code><em class="property"><span class="pre">:</span> <span class="pre">queue.Queue</span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.log_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.logfiles">
+<code class="sig-name descname"><span class="pre">logfiles</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.logfiles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="logtailor.processors.LogProcessor.run">
+<em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#LogProcessor.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.LogProcessor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process log files.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.start_clean">
+<code class="sig-name descname"><span class="pre">start_clean</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.start_clean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.triggers">
+<code class="sig-name descname"><span class="pre">triggers</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.triggers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.LogProcessor.verbose">
+<code class="sig-name descname"><span class="pre">verbose</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.LogProcessor.verbose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="logtailor.processors.ParallelProcessor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">logtailor.processors.</span></code><code class="sig-name descname"><span class="pre">ParallelProcessor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_files</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_queue</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">queue.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">threading.Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tailing</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#ParallelProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.ParallelProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#logtailor.processors.LogProcessor" title="logtailor.processors.LogProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">logtailor.processors.LogProcessor</span></code></a></p>
+<p>Processes all logfiles in parallel.</p>
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.cancel">
+<code class="sig-name descname"><span class="pre">cancel</span></code><em class="property"><span class="pre">:</span> <span class="pre">threading.Event</span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.filtered">
+<code class="sig-name descname"><span class="pre">filtered</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.log_queue">
+<code class="sig-name descname"><span class="pre">log_queue</span></code><em class="property"><span class="pre">:</span> <span class="pre">queue.Queue</span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.log_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.logfiles">
+<code class="sig-name descname"><span class="pre">logfiles</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.logfiles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="logtailor.processors.ParallelProcessor.run">
+<code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#ParallelProcessor.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.ParallelProcessor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes all logfiles in parallel.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.start_clean">
+<code class="sig-name descname"><span class="pre">start_clean</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.start_clean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.triggers">
+<code class="sig-name descname"><span class="pre">triggers</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.triggers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.ParallelProcessor.verbose">
+<code class="sig-name descname"><span class="pre">verbose</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.ParallelProcessor.verbose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="logtailor.processors.SerialProcessor">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">logtailor.processors.</span></code><code class="sig-name descname"><span class="pre">SerialProcessor</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_files</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triggers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_queue</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">queue.Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cancel</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">threading.Event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">history</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tailing</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#SerialProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.SerialProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#logtailor.processors.LogProcessor" title="logtailor.processors.LogProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">logtailor.processors.LogProcessor</span></code></a></p>
+<p>Process one log after the other</p>
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.cancel">
+<code class="sig-name descname"><span class="pre">cancel</span></code><em class="property"><span class="pre">:</span> <span class="pre">threading.Event</span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.cancel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.filtered">
+<code class="sig-name descname"><span class="pre">filtered</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.log_queue">
+<code class="sig-name descname"><span class="pre">log_queue</span></code><em class="property"><span class="pre">:</span> <span class="pre">queue.Queue</span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.log_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.logfiles">
+<code class="sig-name descname"><span class="pre">logfiles</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">pathlib.Path</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.logfiles" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="logtailor.processors.SerialProcessor.run">
+<code class="sig-name descname"><span class="pre">run</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/logtailor/processors.html#SerialProcessor.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#logtailor.processors.SerialProcessor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process one logfile after the other.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.start_clean">
+<code class="sig-name descname"><span class="pre">start_clean</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.start_clean" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.triggers">
+<code class="sig-name descname"><span class="pre">triggers</span></code><em class="property"><span class="pre">:</span> <span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.triggers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="logtailor.processors.SerialProcessor.verbose">
+<code class="sig-name descname"><span class="pre">verbose</span></code><em class="property"><span class="pre">:</span> <span class="pre">bool</span></em><a class="headerlink" href="#logtailor.processors.SerialProcessor.verbose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-logtailor">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-logtailor" title="Permalink to this headline">¶</a></h2>
+<p>Log analysis package.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">logtailor</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">logtailor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">logtailor</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">logtailor package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="history.html">History</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">logtailor</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">logtailor</a></li>
+      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Stefan Braun.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/logtailor.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
