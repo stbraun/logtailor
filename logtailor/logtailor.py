@@ -38,7 +38,7 @@ from .processors import SerialProcessor, ParallelProcessor
 
 
 # Version number. Managed by bumpversion, do not edit!
-VERSION = "1.2.1"
+__version__ = "1.2.1"
 
 # Configuration
 INI_FILE = ".logtailor.ini"
@@ -264,7 +264,7 @@ def verbose_info(log_files, triggers):
     """
     sys.stderr.write("{}\n".format("-" * 80))
     sys.stderr.write(
-        "\tlogtailor version {}. Copyright 2018 Stefan Braun.\n".format(VERSION)
+        "\tlogtailor version {}. Copyright 2018 Stefan Braun.\n".format(__version__)
     )
     sys.stderr.write("Triggers:\n")
     for trigger in triggers:
@@ -278,7 +278,7 @@ def verbose_info(log_files, triggers):
 def print_version_and_exit():
     """Print version and copyright info to stderr and exit with 0."""
     sys.stderr.write(
-        "logtailor version {}. Copyright 2018 Stefan Braun.\n".format(VERSION)
+        "logtailor version {}. Copyright 2018 Stefan Braun.\n".format(__version__)
     )
     sys.exit(0)
 
