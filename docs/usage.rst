@@ -42,6 +42,8 @@ When working with the same logs and filters for some time, it gets tedious to en
     log1 = ./logs/application/server.log
     log2 = ./logs/webserver/site.log
 
+**Note:** Do not use quotes around the file names even if there are blanks inside.
+
 In a second section the output file and triggers can be configured:::
 
     [global]
