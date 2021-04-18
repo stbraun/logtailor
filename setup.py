@@ -5,11 +5,11 @@ Copyright 2018, Stefan Braun.
 
 from setuptools import setup
 
-VERSION = "1.2.1"
+version='1.2.1'
 
 setup(
     name="logtailor",
-    version=VERSION,
+    version=wversion,
     description="Log tail and filter tool.",
     classifiers=[
         "Development Status :: 4 - Beta",
