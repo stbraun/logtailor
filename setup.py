@@ -9,7 +9,7 @@ version='1.2.2'
 
 setup(
     name="logtailor",
-    version=wversion,
+    version=version,
     description="Log tail and filter tool.",
     classifiers=[
         "Development Status :: 4 - Beta",
