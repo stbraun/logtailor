@@ -23,7 +23,7 @@ setup(
     ],
     keywords="development tools",
     author="Stefan Braun",
-    author_email="sb@stbraun..com",
+    author_email="sb@stbraun.com",
     license="MIT",
     py_modules=["logtailor"],
     packages=["logtailor"],
