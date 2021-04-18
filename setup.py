@@ -5,7 +5,7 @@ Copyright 2018, Stefan Braun.
 
 from setuptools import setup
 
-version='1.2.2'
+version='1.2.3'
 
 setup(
     name="logtailor",

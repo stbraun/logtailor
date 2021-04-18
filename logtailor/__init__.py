@@ -22,4 +22,4 @@
 
 __author__ = """Stefan Braun"""
 __email__ = 'sb@stbraun.com'
-__version__ = '1.2.2'
+__version__ = '1.2.3'

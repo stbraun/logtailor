@@ -38,7 +38,7 @@ from .processors import SerialProcessor, ParallelProcessor
 
 
 # Version number. Managed by bumpversion, do not edit!
-__version__ = '1.2.2'
+__version__ = '1.2.3'
 
 # Configuration
 INI_FILE = ".logtailor.ini"
